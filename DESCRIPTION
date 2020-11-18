@@ -1,0 +1,20 @@
+Package: StratRMST
+Title: Stratified Restricted Mean Survival Time Analysis
+Version: 0.0.1
+Authors@R: 
+    person(given = "Zachary",
+           family = "McCaw",
+           role = c("aut", "cre"),
+           email = "zmccaw@alumni.harvard.edu",
+           comment = c(ORCID = "0000-0002-2006-9828"))
+Description: Provides functions for inference on the stratified difference and ratio of restricted mean survival
+	times comparing two treatment arms.
+Depends: R (>= 3.5.0)
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports:
+  methods,
+  stats,
+  survRM2
+RoxygenNote: 7.1.1

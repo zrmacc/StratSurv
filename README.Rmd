@@ -1,0 +1,68 @@
+---
+title: "README"
+author: "Zachary McCaw"
+date: "`r Sys.Date()`"
+output: 
+  html_document: 
+    keep_md: TRUE
+--- 
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  warning = FALSE, 
+  message = FALSE, 
+  cache = FALSE
+)
+```
+
+Zachary McCaw <br>
+Updated: 2020-11-17
+
+## Overview
+
+Given stratified time to event data for two arms, this package calculates the mean and ratio of the marginal restricted mean survival times (RMSTs) and restricted mean times lost (RMTLs). The marginal means are calculated as the stratum-size weighted-average of the per-stratum means. Also see:
+
+* [MargRates](https://github.com/zrmacc/MargRates) for comparing binary event rates.
+* [CICs](https://github.com/zrmacc/CICs) for comparing cumulative incidence curves.
+
+## Installation
+
+```{r, eval=FALSE}
+devtools::install_github(repo = 'zrmacc/StratRMST')
+```
+
+## Example
+
+### Data
+
+Synthetic example data in the format expected by this package may be loaded via:
+
+```{r}
+library(StratRMST)
+data(strat_data)
+head(strat_data)
+```
+
+In these data, `arm` is the treatment arm, 0 for reference, 1 for treatment; `time` is the observation time in days; and `status` is the status indicator, 0 for censoring, 1 for recovery; and `stratum` is stratification factor, taking values 0, 1, and 2. For analyzing other data sets, `arm` and `status` should likewise have 0/1 coding. `stratum` may be integer or factor valued.
+
+### Compare RMSTs and RMTLs
+
+To compare the RMSTs and RMTLs at $\tau = 18$ months: 
+
+```{r}
+strat_analysis <- StratRMST(
+  time = strat_data$time,
+  status = strat_data$status,
+  arm = strat_data$arm,
+  strata = strat_data$stratum,
+  tau = 18
+)
+show(strat_analysis)
+```
+
+The output is on object of class `stratRMST` containing these slots:
+* `@Stratified` contains the per arm and stratum summary statistics.
+* `@Marginal` contains the per arm RMST and RMTL, marginalized across strata.
+* `@Contrasts` contains the difference and ratio of RMSTs and RMTLs.
+* `@Weights` contains the stratum sizes and weights. 
