@@ -33,11 +33,11 @@ StratumRMST <- function(
       fit$RMST.arm1$result
     )
   )
-  colnames(out) <- c("Est", "SE", "L", "U")
+  colnames(out) <- c("est", "se", "lower", "upper")
   out <- cbind(
-    "Arm" = c(0, 0, 1, 1),
-    "Tau" = rep(tau, 4),
-    "Stat" = rep(c("RMST", "RMTL"), times = 2),
+    "arm" = c(0, 0, 1, 1),
+    "tau" = rep(tau, 4),
+    "stat" = rep(c("RMST", "RMTL"), times = 2),
     out
   )
   rownames(out) <- NULL
@@ -71,11 +71,11 @@ MargStats <- function(
 ) {
   crit <- qnorm(p = 1 - alpha / 2)
   out <- data.frame(
-    "Est" = sum(weight * est),
-    "SE" = sqrt(sum(weight^2 * se^2))
+    "est" = sum(weight * est),
+    "se" = sqrt(sum(weight^2 * se^2))
   )
-  out$L <- out$Est - crit * out$SE
-  out$U <- out$Est + crit * out$SE
+  out$lower <- out$est - crit * out$se
+  out$upper <- out$est + crit * out$se
   return(out)
 }
 
@@ -124,11 +124,11 @@ Contrasts <- function(
   
   # Output.
   out <- data.frame(
-    "Contrast" = c("A1-A0", "A1/A0"),
-    "Est" = c(delta, rho),
-    "L" = c(delta_lower, rho_lower),
-    "U" = c(delta_upper, rho_upper),
-    "P" = c(delta_p, rho_p)
+    "contrast" = c("A1-A0", "A1/A0"),
+    "est" = c(delta, rho),
+    "lower" = c(delta_lower, rho_lower),
+    "upper" = c(delta_upper, rho_upper),
+    "p" = c(delta_p, rho_p)
   )
   return(out)
 }
@@ -151,7 +151,10 @@ Contrasts <- function(
 #' @param strata Stratification factor. 
 #' @param tau Truncation time.
 #' @param alpha Type I error.
+#' @param weight Per-stratum weights, for sorted strata.
 #' @importFrom methods new
+#' @importFrom dplyr "%>%" group_by inner_join n select summarise
+#' @importFrom tidyr pivot_wider
 #' @export
 #' @examples 
 #' data(strat_data)
@@ -169,7 +172,8 @@ StratRMST <- function(
   arm,
   strata = NULL,
   tau,
-  alpha = 0.05
+  alpha = 0.05,
+  weight = NULL
 ) {
   
   # Create single stratum if no strata are provided. 
@@ -180,101 +184,86 @@ StratRMST <- function(
   # Data.
   data <- data.frame(time, status, arm, strata)
   
-  # Split data by strata.
-  split_data <- split(x = data, f = data$strata)
-  
-  # Weights proportional to stratum sizes.
-  strata_tab <- table(data$strata)
-  weights <- strata_tab / nrow(data)
-  
-  # Calculate per-stratum statistics.
-  aux <- function(df) {
-    out <- StratumRMST(
-      time = df$time,
-      status = df$status,
-      arm = df$arm,
-      tau = tau
+  # Calculate weights if not provided.
+  if (is.null(weight)) {
+    weights <- data %>%
+      dplyr::group_by(strata) %>%
+      dplyr::summarise(weight = n(), .groups = "drop")
+    weights$weight <- weights$weight / sum(weights$weight)
+  } else {
+    weights <- data.frame(
+      strata = sort(unique(strata)),
+      weight = weight
     )
-    out <- cbind(
-      "Stratum" = unique(df$strata),
-      out
-    )
-    return(out)
+    weights$weight <- weights$weight / sum(weights$weight)
   }
-  per_stratum_stats <- lapply(split_data, aux)
-  per_stratum_stats <- do.call(rbind, per_stratum_stats)
-  rownames(per_stratum_stats) <- NULL
-  per_stratum_rmst <- per_stratum_stats[per_stratum_stats$Stat == "RMST", ]
-  per_stratum_rmtl <- per_stratum_stats[per_stratum_stats$Stat == "RMTL", ]
   
-  # Split by arm.
-  per_stratum_rmst_split <- split(x = per_stratum_rmst, f = per_stratum_rmst$Arm)
-  per_stratum_rmtl_split <- split(x = per_stratum_rmtl, f = per_stratum_rmst$Arm)
-  
-  # Marginal statistics.
-  aux <- function(df) {
-    out <- MargStats(est = df$Est, se = df$SE, weight = weights, alpha = alpha)
-    out <- cbind(
-      "Arm" = unique(df$Arm),
-      "Tau" = unique(df$Tau),
-      "Stat" = unique(df$Stat),
-      out
+  # Per-stratum RMSTs.
+  rmst <- data %>%
+    dplyr::group_by(strata) %>%
+    dplyr::summarise(
+      StratumRMST(
+        time = time,
+        status = status,
+        arm = arm,
+        tau = tau
+      ),
+      .groups = "drop"
+    ) %>%
+    dplyr::inner_join(weights, by = "strata")
+
+  # Marginalize.
+  marg <- rmst %>%
+    dplyr::group_by(arm, stat) %>%
+    dplyr::summarise(
+      MargStats(
+        est = est,
+        se = se,
+        weight = weight,
+        alpha = alpha
+      ),
+      .groups = "drop"
     )
-    return(out)
-  }
-  marg_stats <- c(lapply(per_stratum_rmst_split, aux), lapply(per_stratum_rmtl_split, aux))
-  marg_stats <- do.call(rbind, marg_stats)
-  rownames(marg_stats) <- NULL
-  marg_rmst <- marg_stats[marg_stats$Stat == "RMST", ]
-  marg_rmtl <- marg_stats[marg_stats$Stat == "RMTL", ]
   
-  # Contrast RMSTs.
-  contrast_rmst <- Contrasts(
-    est1 = marg_rmst$Est[marg_rmst$Arm == 1],
-    est0 = marg_rmst$Est[marg_rmst$Arm == 0],
-    se1 = marg_rmst$SE[marg_rmst$Arm == 1],
-    se0 = marg_rmst$SE[marg_rmst$Arm == 0],
-    alpha = alpha
-  )
-  contrast_rmst <- cbind(
-    "Stat" = "RMST",
-    contrast_rmst
-  )
-  
-  # Contrast RMTLs.
-  contrast_rmtl <- Contrasts(
-    est1 = marg_rmtl$Est[marg_rmtl$Arm == 1],
-    est0 = marg_rmtl$Est[marg_rmtl$Arm == 0],
-    se1 = marg_rmtl$SE[marg_rmtl$Arm == 1],
-    se0 = marg_rmtl$SE[marg_rmtl$Arm == 0],
-    alpha = alpha
-  )
-  contrast_rmtl <- cbind(
-    "Stat" = "RMTL",
-    contrast_rmtl
-  )
-  
-  contrasts <- rbind(
-    contrast_rmst,
-    contrast_rmtl
-  )
+  # Contrasts.
+  contrasts <- marg %>%
+    dplyr::select(arm, stat, est, se) %>%
+    tidyr::pivot_wider(
+      names_from = arm, 
+      values_from = c(est, se), 
+      names_sep = ""
+      ) %>%
+    dplyr::group_by(stat) %>%
+    dplyr::summarise(
+      Contrasts(est1, est0, se1, se0, alpha),
+      .groups = "drop"
+    )
   
   # Weights data.frame.
-  weights_df <- data.frame(
-    "Stratum" = names(strata_tab),
-    "Weight" = as.numeric(weights),
-    "N" = as.numeric(strata_tab),
-    "N0" = as.numeric(table(data$strata[data$arm == 0])),
-    "N1" = as.numeric(table(data$strata[data$arm == 1]))
-  )
+  counts <- data %>%
+    dplyr::group_by(arm, strata) %>%
+    dplyr::summarise(n = n(), .groups = "drop") %>%
+    tidyr::pivot_wider(
+      names_from = arm,
+      names_sep = "",
+      values_from = n
+    ) %>%
+    dplyr::rename(
+      n0 = "0",
+      n1 = "1"
+    ) %>%
+    dplyr::inner_join(
+      weights,
+      by = "strata"
+    )
   
   # Output.
   out <- new(
     Class = "stratRMST",
-    Stratified = per_stratum_stats,
-    Marginal = marg_stats,
+    Stratified = rmst,
+    Marginal = marg,
     Contrasts = contrasts,
-    Weights = weights_df
+    Weights = counts
   )
   return(out)
 }

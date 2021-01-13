@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 # Stratified Restricted Mean Survival Time Analysis
 
 Zachary McCaw <br>
-Updated: 2020-11-17
+Updated: 2021-01-12
 
 ## Overview
 
@@ -38,15 +38,34 @@ devtools::install_github(repo = 'zrmacc/StratRMST')
 
 ### Data
 
-Synthetic example data in the format expected by this package may be loaded via:
+Below, data are simulated from a two-arm trial with two strata. There are 100 patients in each arm, 50 per stratum. In stratum 1, treatment (`arm == 1`) reduces the event rate by half. In stratum 2, treatment has no effect.
 
 ```{r}
 library(StratRMST)
-data(strat_data)
-head(strat_data)
+# Arm 1.
+data1 <- GenData(
+  n = c(50, 50),
+  event_rates = c(1/36, 2/36),
+  censor_rates = 1/20,
+  tau = 36
+)
+data1$arm <- 1
+
+# Arm 0.
+data0 <- GenData(
+  n = c(50, 50),
+  event_rates = c(2/36, 2/36),
+  censor_rates = 1/20,
+  tau = 36
+)
+data0$arm <- 0
+
+# Overall data set.
+data <- rbind(data1, data0)
+head(data)
 ```
 
-In these data, `arm` is the treatment arm, 0 for reference, 1 for treatment; `time` is the observation time in days; and `status` is the status indicator, 0 for censoring, 1 for recovery; and `stratum` is stratification factor, taking values 0, 1, and 2. For analyzing other data sets, `arm` and `status` should likewise have 0/1 coding. `stratum` may be integer or factor valued.
+In these data, `arm` is the treatment arm, 0 for reference, 1 for treatment; `time` is the observation time in days; and `status` is the status indicator, 0 for censoring, 1 for recovery; and `stratum` is stratification factor, taking values 0, and 1. For analyzing other data sets, `arm` and `status` should likewise have 0/1 coding. `stratum` may be integer or factor valued.
 
 ### Compare RMSTs and RMTLs
 
@@ -54,10 +73,10 @@ To compare the RMSTs and RMTLs at $\tau = 18$ months:
 
 ```{r}
 strat_analysis <- StratRMST(
-  time = strat_data$time,
-  status = strat_data$status,
-  arm = strat_data$arm,
-  strata = strat_data$stratum,
+  time = data$time,
+  status = data$status,
+  arm = data$arm,
+  strata = data$stratum,
   tau = 18
 )
 show(strat_analysis)
@@ -68,3 +87,17 @@ The output is on object of class `stratRMST` containing these slots:
 * `@Marginal` contains the per arm RMST and RMTL, marginalized across strata.
 * `@Contrasts` contains the difference and ratio of RMSTs and RMTLs.
 * `@Weights` contains the stratum sizes and weights. 
+
+By default, the weighting is proportional to stratum size. The weights may also be specified:
+
+```{r}
+strat_analysis <- StratRMST(
+  time = data$time,
+  status = data$status,
+  arm = data$arm,
+  strata = data$stratum,
+  tau = 18,
+  weight = c(0.8, 0.2)
+)
+show(strat_analysis)
+```

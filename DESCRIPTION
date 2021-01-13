@@ -1,6 +1,6 @@
 Package: StratRMST
 Title: Stratified Restricted Mean Survival Time Analysis
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: 
     person(given = "Zachary",
            family = "McCaw",
@@ -14,7 +14,9 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports:
+  dplyr,
   methods,
   stats,
-  survRM2
+  survRM2,
+  tidyr
 RoxygenNote: 7.1.1

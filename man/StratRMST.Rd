@@ -4,7 +4,7 @@
 \alias{StratRMST}
 \title{Stratified RMST Analysis}
 \usage{
-StratRMST(time, status, arm, strata = NULL, tau, alpha = 0.05)
+StratRMST(time, status, arm, strata = NULL, tau, alpha = 0.05, weight = NULL)
 }
 \arguments{
 \item{time}{Observation time.}
@@ -19,6 +19,8 @@ of interest.}
 \item{tau}{Truncation time.}
 
 \item{alpha}{Type I error.}
+
+\item{weight}{Per-stratum weights, for sorted strata.}
 }
 \description{
 Calculates the difference and ratio of marginal restricted mean survival 
