@@ -51,14 +51,14 @@ head(data)
 
 ```
 ## # A tibble: 6 x 4
-##   strata   time status   arm
-##    <int>  <dbl>  <dbl> <dbl>
-## 1      1  1.30       0     1
-## 2      1  0.268      0     1
-## 3      1 13.1        0     1
-## 4      1  2.68       1     1
-## 5      1  5.60       0     1
-## 6      1  8.21       1     1
+##   strata    time status   arm
+##    <int>   <dbl>  <dbl> <dbl>
+## 1      1  7.82        1     1
+## 2      1  2.02        1     1
+## 3      1  9.85        0     1
+## 4      1 11.6         0     1
+## 5      1  0.0162      1     1
+## 6      1  8.64        0     1
 ```
 
 In these data, `arm` is the treatment arm, 0 for reference, 1 for treatment; `time` is the observation time in days; and `status` is the status indicator, 0 for censoring, 1 for recovery; and `stratum` is stratification factor, taking values 0, and 1. For analyzing other data sets, `arm` and `status` should likewise have 0/1 coding. `stratum` may be integer or factor valued.
@@ -84,20 +84,20 @@ show(rmst)
 ## # A tibble: 4 x 6
 ##     arm stat    est    se lower upper
 ##   <dbl> <chr> <dbl> <dbl> <dbl> <dbl>
-## 1     0 RMST  13.2  0.672 11.9  14.5 
-## 2     0 RMTL   4.82 0.672  3.51  6.14
-## 3     1 RMST  12.4  0.698 11    13.7 
-## 4     1 RMTL   5.65 0.698  4.28  7.01
+## 1     0 RMST  10.9  0.689  9.58 12.3 
+## 2     0 RMTL   7.07 0.689  5.72  8.42
+## 3     1 RMST  13.2  0.721 11.7  14.6 
+## 4     1 RMTL   4.84 0.721  3.43  6.25
 ## 
 ## 
 ## Contrasts:
 ## # A tibble: 4 x 6
-##   stat  contrast    est  lower upper     p
-##   <chr> <chr>     <dbl>  <dbl> <dbl> <dbl>
-## 1 RMST  A1-A0    -0.822 -2.72   1.08 0.396
-## 2 RMST  A1/A0     0.938  0.808  1.09 0.397
-## 3 RMTL  A1-A0     0.822 -1.08   2.72 0.396
-## 4 RMTL  A1/A0     1.17   0.812  1.69 0.398
+##   stat  contrast    est  lower  upper      p
+##   <chr> <chr>     <dbl>  <dbl>  <dbl>  <dbl>
+## 1 RMST  A1-A0     2.23   0.273  4.18  0.0255
+## 2 RMST  A1/A0     1.2    1.02   1.42  0.0264
+## 3 RMTL  A1-A0    -2.23  -4.18  -0.273 0.0255
+## 4 RMTL  A1/A0     0.685  0.483  0.971 0.0334
 ```
 
 The output is on object of class `stratSurv` containing these slots:
@@ -126,20 +126,20 @@ show(rmst)
 ## # A tibble: 4 x 6
 ##     arm stat    est    se lower upper
 ##   <dbl> <chr> <dbl> <dbl> <dbl> <dbl>
-## 1     0 RMST  12.8  0.837 11.2  14.5 
-## 2     0 RMTL   5.15 0.837  3.51  6.79
-## 3     1 RMST  13.3  0.741 11.9  14.8 
-## 4     1 RMTL   4.66 0.741  3.21  6.11
+## 1     0 RMST  11    0.844  9.31 12.6 
+## 2     0 RMTL   7.03 0.844  5.38  8.69
+## 3     1 RMST  13.7  0.828 12    15.3 
+## 4     1 RMTL   4.34 0.828  2.71  5.96
 ## 
 ## 
 ## Contrasts:
 ## # A tibble: 4 x 6
-##   stat  contrast    est  lower upper     p
-##   <chr> <chr>     <dbl>  <dbl> <dbl> <dbl>
-## 1 RMST  A1-A0     0.49  -1.7    2.68 0.661
-## 2 RMST  A1/A0     1.04   0.878  1.23 0.662
-## 3 RMTL  A1-A0    -0.49  -2.68   1.7  0.661
-## 4 RMTL  A1/A0     0.905  0.580  1.41 0.66
+##   stat  contrast    est  lower  upper      p
+##   <chr> <chr>     <dbl>  <dbl>  <dbl>  <dbl>
+## 1 RMST  A1-A0     2.7    0.381  5.02  0.0225
+## 2 RMST  A1/A0     1.25   1.03   1.51  0.0247
+## 3 RMTL  A1-A0    -2.7   -5.02  -0.381 0.0225
+## 4 RMTL  A1/A0     0.616  0.396  0.959 0.0319
 ```
 
 ### Compare Event Rates
@@ -163,15 +163,17 @@ show(rates)
 ## # A tibble: 2 x 6
 ##     arm   tau  rate     se lower upper
 ##   <dbl> <dbl> <dbl>  <dbl> <dbl> <dbl>
-## 1     0    18 0.461 0.0653 0.333 0.589
-## 2     1    18 0.438 0.0614 0.317 0.558
+## 1     0    18 0.238 0.0641 0.112 0.363
+## 2     1    18 0.506 0.0656 0.377 0.634
 ## 
 ## 
 ## Contrasts:
 ## # A tibble: 3 x 7
-##   strata stat     est     se  lower upper     p
-##    <dbl> <chr>  <dbl>  <dbl>  <dbl> <dbl> <dbl>
-## 1      1 rd    -0.023 0.0896 -0.199 0.153 0.798
-## 2      1 rr     0.95  0.189   0.643 1.4   0.798
-## 3      1 or     0.911 0.33    0.448 1.85  0.798
+##   strata stat    est     se  lower upper       p
+##    <dbl> <chr> <dbl>  <dbl>  <dbl> <dbl>   <dbl>
+## 1      1 rd    0.268 0.0917 0.0881 0.448 0.00349
+## 2      1 rr    2.13  0.636  1.18   3.82  0.0117 
+## 3      1 or    3.28  1.44   1.38   7.77  0.007
 ```
+
+Here 'rd', 'rr', and 'or' are the rate difference, rate ratio, and rate odds ratio, respectively.

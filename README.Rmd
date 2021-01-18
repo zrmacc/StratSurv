@@ -116,3 +116,5 @@ rates <- StratRate(
 )
 show(rates)
 ```
+
+Here 'rd', 'rr', and 'or' are the rate difference, rate ratio, and rate odds ratio, respectively.
