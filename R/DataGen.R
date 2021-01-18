@@ -3,15 +3,15 @@
 #' @param n Sample size.
 #' @param censor_rate Censoring rate.
 #' @param event_rate Event rate.
-#' @param stratum Stratum label.
+#' @param strata Stratum label.
 #' @param tau Truncation time.
 #' @importFrom stats rexp
 
-GenDataStratum <- function(
+GenDataStrat <- function(
   n,
   censor_rate,
   event_rate,
-  stratum,
+  strata,
   tau
 ) {
   
@@ -31,17 +31,16 @@ GenDataStratum <- function(
   # Output.
   out <- data.frame(
     time = time,
-    status = 1 * (event <= time),
-    stratum = stratum
+    status = 1 * (event <= time)
   )
   return(out)  
 }
 
 #' Generate Data
 #' 
-#' @param n Per-stratum sample sizes.
-#' @param censor_rates Per-stratum censoring rates.
-#' @param event_rates Per-stratum event rates. Determines the
+#' @param n Per-strata sample sizes.
+#' @param censor_rates Per-strata censoring rates.
+#' @param event_rates Per-strata event rates. Determines the
 #'   number of strata.
 #' @param tau Truncation time.
 #' @importFrom dplyr "%>%" group_by summarise
@@ -61,19 +60,23 @@ GenData <- function(
     event_rate = event_rates,
     tau = tau
   )
-  df$stratum <- seq_len(nrow(df))
+  df$strata <- seq_len(nrow(df))
   
   # Data
+  censor_rate <- NULL
+  event_rate <- NULL
+  strata <- NULL
   data <- df %>%
-    dplyr::group_by(stratum) %>%
+    dplyr::group_by(strata) %>%
     dplyr::summarise(
-      GenDataStratum(
+      GenDataStrat(
         n = n, 
         censor_rate = censor_rate, 
         event_rate = event_rate,
-        stratum = stratum,
+        strata = strata,
         tau = tau
-      )
+      ),
+      .groups = "drop"
     )
   
   # Output.

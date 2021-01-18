@@ -151,19 +151,37 @@ Contrasts <- function(
 #' @param strata Stratification factor. 
 #' @param tau Truncation time.
 #' @param alpha Type I error.
-#' @param weight Per-stratum weights, for sorted strata.
+#' @param weights Per-stratum weights, for sorted strata.
 #' @importFrom methods new
 #' @importFrom dplyr "%>%" group_by inner_join n select summarise
 #' @importFrom tidyr pivot_wider
 #' @export
 #' @examples 
-#' data(strat_data)
+#' # Arm 1.
+#' data1 <- GenData(
+#'   n = 100,
+#'   event_rates = c(0.5, 1),
+#'   tau = 5
+#' )
+#' data1$arm <- 1
+#' 
+#' # Arm 0.
+#' data0 <- GenData(
+#'   n = 100,
+#'   event_rates = c(1, 1),
+#'   tau = 5
+#' )
+#' data0$arm <- 0
+#' 
+#' # Overall data set.
+#' data <- rbind(data1, data0)
+#' 
 #' StratRMST(
-#'   time = strat_data$time,
-#'   status = strat_data$status,
-#'   arm = strat_data$arm,
-#'   strata = strat_data$stratum,
-#'   tau = 18
+#'   time = data$time,
+#'   status = data$status,
+#'   arm = data$arm,
+#'   strata = data$strata,
+#'   tau = 2
 #' )
 
 StratRMST <- function(
@@ -173,7 +191,7 @@ StratRMST <- function(
   strata = NULL,
   tau,
   alpha = 0.05,
-  weight = NULL
+  weights = NULL
 ) {
   
   # Create single stratum if no strata are provided. 
@@ -184,19 +202,8 @@ StratRMST <- function(
   # Data.
   data <- data.frame(time, status, arm, strata)
   
-  # Calculate weights if not provided.
-  if (is.null(weight)) {
-    weights <- data %>%
-      dplyr::group_by(strata) %>%
-      dplyr::summarise(weight = n(), .groups = "drop")
-    weights$weight <- weights$weight / sum(weights$weight)
-  } else {
-    weights <- data.frame(
-      strata = sort(unique(strata)),
-      weight = weight
-    )
-    weights$weight <- weights$weight / sum(weights$weight)
-  }
+  # Prepare stratum weights.
+  weights <- PrepWeights(data = data, weight = weights)
   
   # Per-stratum RMSTs.
   rmst <- data %>%
@@ -226,6 +233,12 @@ StratRMST <- function(
     )
   
   # Contrasts.
+  arm <- NULL
+  est <- est0 <- est1 <- NULL
+  stat <- NULL
+  se <- se0 <- se1 <- NULL
+  weight <- NULL
+  
   contrasts <- marg %>%
     dplyr::select(arm, stat, est, se) %>%
     tidyr::pivot_wider(
@@ -235,31 +248,16 @@ StratRMST <- function(
       ) %>%
     dplyr::group_by(stat) %>%
     dplyr::summarise(
-      Contrasts(est1, est0, se1, se0, alpha),
+      Contrasts(est1 = est1, est0 = est0, se1 = se1, se0 = se0, alpha = alpha),
       .groups = "drop"
     )
   
   # Weights data.frame.
-  counts <- data %>%
-    dplyr::group_by(arm, strata) %>%
-    dplyr::summarise(n = n(), .groups = "drop") %>%
-    tidyr::pivot_wider(
-      names_from = arm,
-      names_sep = "",
-      values_from = n
-    ) %>%
-    dplyr::rename(
-      n0 = "0",
-      n1 = "1"
-    ) %>%
-    dplyr::inner_join(
-      weights,
-      by = "strata"
-    )
+  counts <- PrepCounts(data = data, weights = weights)
   
   # Output.
   out <- new(
-    Class = "stratRMST",
+    Class = "stratSurv",
     Stratified = rmst,
     Marginal = marg,
     Contrasts = contrasts,

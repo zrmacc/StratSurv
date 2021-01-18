@@ -7,11 +7,11 @@
 GenData(n, censor_rates = 0.2, event_rates = 1, tau = 10)
 }
 \arguments{
-\item{n}{Per-stratum sample sizes.}
+\item{n}{Per-strata sample sizes.}
 
-\item{censor_rates}{Per-stratum censoring rates.}
+\item{censor_rates}{Per-strata censoring rates.}
 
-\item{event_rates}{Per-stratum event rates. Determines the
+\item{event_rates}{Per-strata event rates. Determines the
 number of strata.}
 
 \item{tau}{Truncation time.}

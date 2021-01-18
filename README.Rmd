@@ -16,14 +16,14 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Stratified Restricted Mean Survival Time Analysis
+# Stratified Analysis of Survival Means and Rates
 
 Zachary McCaw <br>
-Updated: 2021-01-12
+Updated: 2021-01-18
 
 ## Overview
 
-Given stratified time to event data for two arms, this package calculates the mean and ratio of the marginal restricted mean survival times (RMSTs) and restricted mean times lost (RMTLs). The marginal means are calculated as the stratum-size weighted-average of the per-stratum means. Also see:
+Given stratified time to event data for two arms, this package calculates the mean and ratio of the marginal event rates, restricted mean survival times (RMSTs), and restricted mean times lost (RMTLs). The marginal means/rates are calculated as the stratum-size weighted-average of the per-stratum means/rates. Also see:
 
 * [MargRates](https://github.com/zrmacc/MargRates) for comparing binary event rates.
 * [CICs](https://github.com/zrmacc/CICs) for comparing cumulative incidence curves.
@@ -31,7 +31,7 @@ Given stratified time to event data for two arms, this package calculates the me
 ## Installation
 
 ```{r, eval=FALSE}
-devtools::install_github(repo = 'zrmacc/StratRMST')
+devtools::install_github(repo = 'zrmacc/StratSurv')
 ```
 
 ## Example
@@ -41,7 +41,7 @@ devtools::install_github(repo = 'zrmacc/StratRMST')
 Below, data are simulated from a two-arm trial with two strata. There are 100 patients in each arm, 50 per stratum. In stratum 1, treatment (`arm == 1`) reduces the event rate by half. In stratum 2, treatment has no effect.
 
 ```{r}
-library(StratRMST)
+library(StratSurv)
 # Arm 1.
 data1 <- GenData(
   n = c(50, 50),
@@ -69,20 +69,20 @@ In these data, `arm` is the treatment arm, 0 for reference, 1 for treatment; `ti
 
 ### Compare RMSTs and RMTLs
 
-To compare the RMSTs and RMTLs at $\tau = 18$ months: 
+To compare RMSTs and RMTLs at $\tau = 18$ months: 
 
 ```{r}
-strat_analysis <- StratRMST(
+rmst <- StratRMST(
   time = data$time,
   status = data$status,
   arm = data$arm,
-  strata = data$stratum,
+  strata = data$strata,
   tau = 18
 )
-show(strat_analysis)
+show(rmst)
 ```
 
-The output is on object of class `stratRMST` containing these slots:
+The output is on object of class `stratSurv` containing these slots:
 * `@Stratified` contains the per arm and stratum summary statistics.
 * `@Marginal` contains the per arm RMST and RMTL, marginalized across strata.
 * `@Contrasts` contains the difference and ratio of RMSTs and RMTLs.
@@ -91,13 +91,28 @@ The output is on object of class `stratRMST` containing these slots:
 By default, the weighting is proportional to stratum size. The weights may also be specified:
 
 ```{r}
-strat_analysis <- StratRMST(
+rmst <- StratRMST(
   time = data$time,
   status = data$status,
   arm = data$arm,
-  strata = data$stratum,
+  strata = data$strata,
   tau = 18,
   weight = c(0.8, 0.2)
 )
-show(strat_analysis)
+show(rmst)
+```
+
+### Compare Event Rates
+
+To compare event rates at $\tau = 18$ months: 
+
+```{r}
+rates <- StratRate(
+  time = data$time,
+  status = data$status,
+  arm = data$arm,
+  strata = data$strata,
+  tau = 18
+)
+show(rates)
 ```

@@ -1,17 +1,18 @@
 #' Stratified RMST Object
 #'
-#' Defines the object class returned by \code{\link{StratRMST}}.
+#' Defines the object class returned by \code{\link{StratRMST}} and
+#' \code{\link{StratRate}}.
 #'
 #' @slot Stratified Stats per arm and stratum.
 #' @slot Marginal Stats per arm, marginalized over strata. 
 #' @slot Contrasts Contrasts of the marginal statistics.
 #' @slot Weights Per-stratum weights.
-#' @name stratRMST-class
-#' @rdname stratRMST-class
-#' @exportClass stratRMST
+#' @name stratSurv-class
+#' @rdname stratSurv-class
+#' @exportClass stratSurv
 
 setClass(
-  Class = "stratRMST",
+  Class = "stratSurv",
   representation = representation(
    Stratified = "data.frame",
    Marginal = "data.frame",
@@ -26,13 +27,13 @@ setClass(
 
 #' Print Method for Stratified RMST Object.
 #'
-#' Print method for objects of class \code{stratRMST}.
+#' Print method for objects of class \code{stratSurv}.
 #'
-#' @param x An object of class \code{stratRMST}.
+#' @param x An object of class \code{stratSurv}.
 #' @param ... Unused.
 #' @export
 
-print.stratRMST <- function (x, ...) {
+print.stratSurv <- function (x, ...) {
   
   disp <- function(y) {
     if (is.numeric(y)) {
@@ -65,13 +66,13 @@ print.stratRMST <- function (x, ...) {
 
 #' Show Method for Stratified RMST Object
 #'
-#' @param object An object of class \code{stratRMST}.
+#' @param object An object of class \code{stratSurv}.
 #' @rdname fit-method
 #' @importFrom methods show
 
 setMethod(
   f = "show",
-  signature = c(object = "stratRMST"),
-  definition = function (object) {print.stratRMST(x = object)}
+  signature = c(object = "stratSurv"),
+  definition = function (object) {print.stratSurv(x = object)}
 )
 

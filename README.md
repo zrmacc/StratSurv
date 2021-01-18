@@ -1,11 +1,11 @@
-# Stratified Restricted Mean Survival Time Analysis
+# Stratified Analysis of Survival Means and Rates
 
 Zachary McCaw <br>
-Updated: 2021-01-12
+Updated: 2021-01-18
 
 ## Overview
 
-Given stratified time to event data for two arms, this package calculates the mean and ratio of the marginal restricted mean survival times (RMSTs) and restricted mean times lost (RMTLs). The marginal means are calculated as the stratum-size weighted-average of the per-stratum means. Also see:
+Given stratified time to event data for two arms, this package calculates the mean and ratio of the marginal event rates, restricted mean survival times (RMSTs), and restricted mean times lost (RMTLs). The marginal means/rates are calculated as the stratum-size weighted-average of the per-stratum means/rates. Also see:
 
 * [MargRates](https://github.com/zrmacc/MargRates) for comparing binary event rates.
 * [CICs](https://github.com/zrmacc/CICs) for comparing cumulative incidence curves.
@@ -14,7 +14,7 @@ Given stratified time to event data for two arms, this package calculates the me
 
 
 ```r
-devtools::install_github(repo = 'zrmacc/StratRMST')
+devtools::install_github(repo = 'zrmacc/StratSurv')
 ```
 
 ## Example
@@ -25,7 +25,7 @@ Below, data are simulated from a two-arm trial with two strata. There are 100 pa
 
 
 ```r
-library(StratRMST)
+library(StratSurv)
 # Arm 1.
 data1 <- GenData(
   n = c(50, 50),
@@ -51,33 +51,32 @@ head(data)
 
 ```
 ## # A tibble: 6 x 4
-## # Groups:   stratum [1]
-##   stratum  time status   arm
-##     <int> <dbl>  <dbl> <dbl>
-## 1       1 26.6       1     1
-## 2       1  8.85      0     1
-## 3       1  8.28      0     1
-## 4       1 20.5       0     1
-## 5       1  2.29      0     1
-## 6       1  5.88      0     1
+##   strata   time status   arm
+##    <int>  <dbl>  <dbl> <dbl>
+## 1      1  1.30       0     1
+## 2      1  0.268      0     1
+## 3      1 13.1        0     1
+## 4      1  2.68       1     1
+## 5      1  5.60       0     1
+## 6      1  8.21       1     1
 ```
 
 In these data, `arm` is the treatment arm, 0 for reference, 1 for treatment; `time` is the observation time in days; and `status` is the status indicator, 0 for censoring, 1 for recovery; and `stratum` is stratification factor, taking values 0, and 1. For analyzing other data sets, `arm` and `status` should likewise have 0/1 coding. `stratum` may be integer or factor valued.
 
 ### Compare RMSTs and RMTLs
 
-To compare the RMSTs and RMTLs at $\tau = 18$ months: 
+To compare RMSTs and RMTLs at $\tau = 18$ months: 
 
 
 ```r
-strat_analysis <- StratRMST(
+rmst <- StratRMST(
   time = data$time,
   status = data$status,
   arm = data$arm,
-  strata = data$stratum,
+  strata = data$strata,
   tau = 18
 )
-show(strat_analysis)
+show(rmst)
 ```
 
 ```
@@ -85,23 +84,23 @@ show(strat_analysis)
 ## # A tibble: 4 x 6
 ##     arm stat    est    se lower upper
 ##   <dbl> <chr> <dbl> <dbl> <dbl> <dbl>
-## 1     0 RMST  11.4  0.704 10.1  12.8 
-## 2     0 RMTL   6.57 0.704  5.19  7.95
-## 3     1 RMST  12.8  0.711 11.4  14.2 
-## 4     1 RMTL   5.16 0.711  3.77  6.55
+## 1     0 RMST  13.2  0.672 11.9  14.5 
+## 2     0 RMTL   4.82 0.672  3.51  6.14
+## 3     1 RMST  12.4  0.698 11    13.7 
+## 4     1 RMTL   5.65 0.698  4.28  7.01
 ## 
 ## 
 ## Contrasts:
 ## # A tibble: 4 x 6
 ##   stat  contrast    est  lower upper     p
 ##   <chr> <chr>     <dbl>  <dbl> <dbl> <dbl>
-## 1 RMST  A1-A0     1.41  -0.552 3.37  0.159
-## 2 RMST  A1/A0     1.12   0.955 1.32  0.16 
-## 3 RMTL  A1-A0    -1.41  -3.37  0.552 0.159
-## 4 RMTL  A1/A0     0.786  0.558 1.11  0.167
+## 1 RMST  A1-A0    -0.822 -2.72   1.08 0.396
+## 2 RMST  A1/A0     0.938  0.808  1.09 0.397
+## 3 RMTL  A1-A0     0.822 -1.08   2.72 0.396
+## 4 RMTL  A1/A0     1.17   0.812  1.69 0.398
 ```
 
-The output is on object of class `stratRMST` containing these slots:
+The output is on object of class `stratSurv` containing these slots:
 * `@Stratified` contains the per arm and stratum summary statistics.
 * `@Marginal` contains the per arm RMST and RMTL, marginalized across strata.
 * `@Contrasts` contains the difference and ratio of RMSTs and RMTLs.
@@ -111,15 +110,15 @@ By default, the weighting is proportional to stratum size. The weights may also 
 
 
 ```r
-strat_analysis <- StratRMST(
+rmst <- StratRMST(
   time = data$time,
   status = data$status,
   arm = data$arm,
-  strata = data$stratum,
+  strata = data$strata,
   tau = 18,
   weight = c(0.8, 0.2)
 )
-show(strat_analysis)
+show(rmst)
 ```
 
 ```
@@ -127,18 +126,52 @@ show(strat_analysis)
 ## # A tibble: 4 x 6
 ##     arm stat    est    se lower upper
 ##   <dbl> <chr> <dbl> <dbl> <dbl> <dbl>
-## 1     0 RMST  11.5  0.849  9.81 13.1 
-## 2     0 RMTL   6.53 0.849  4.87  8.19
-## 3     1 RMST  13.6  0.8   12    15.2 
-## 4     1 RMTL   4.4  0.8    2.84  5.97
+## 1     0 RMST  12.8  0.837 11.2  14.5 
+## 2     0 RMTL   5.15 0.837  3.51  6.79
+## 3     1 RMST  13.3  0.741 11.9  14.8 
+## 4     1 RMTL   4.66 0.741  3.21  6.11
 ## 
 ## 
 ## Contrasts:
 ## # A tibble: 4 x 6
-##   stat  contrast    est  lower upper      p
-##   <chr> <chr>     <dbl>  <dbl> <dbl>  <dbl>
-## 1 RMST  A1-A0     2.13  -0.161 4.41  0.0685
-## 2 RMST  A1/A0     1.19   0.985 1.43  0.0723
-## 3 RMTL  A1-A0    -2.13  -4.41  0.161 0.0685
-## 4 RMTL  A1/A0     0.674  0.435 1.05  0.078
+##   stat  contrast    est  lower upper     p
+##   <chr> <chr>     <dbl>  <dbl> <dbl> <dbl>
+## 1 RMST  A1-A0     0.49  -1.7    2.68 0.661
+## 2 RMST  A1/A0     1.04   0.878  1.23 0.662
+## 3 RMTL  A1-A0    -0.49  -2.68   1.7  0.661
+## 4 RMTL  A1/A0     0.905  0.580  1.41 0.66
+```
+
+### Compare Event Rates
+
+To compare event rates at $\tau = 18$ months: 
+
+
+```r
+rates <- StratRate(
+  time = data$time,
+  status = data$status,
+  arm = data$arm,
+  strata = data$strata,
+  tau = 18
+)
+show(rates)
+```
+
+```
+## Marginal Statistics:
+## # A tibble: 2 x 6
+##     arm   tau  rate     se lower upper
+##   <dbl> <dbl> <dbl>  <dbl> <dbl> <dbl>
+## 1     0    18 0.461 0.0653 0.333 0.589
+## 2     1    18 0.438 0.0614 0.317 0.558
+## 
+## 
+## Contrasts:
+## # A tibble: 3 x 7
+##   strata stat     est     se  lower upper     p
+##    <dbl> <chr>  <dbl>  <dbl>  <dbl> <dbl> <dbl>
+## 1      1 rd    -0.023 0.0896 -0.199 0.153 0.798
+## 2      1 rr     0.95  0.189   0.643 1.4   0.798
+## 3      1 or     0.911 0.33    0.448 1.85  0.798
 ```
