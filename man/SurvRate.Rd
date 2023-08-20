@@ -4,17 +4,17 @@
 \alias{SurvRate}
 \title{Kaplan-Meier Survival Rate}
 \usage{
-SurvRate(alpha = 0.05, time, status, tau)
+SurvRate(time, status, tau, alpha = 0.05)
 }
 \arguments{
-\item{alpha}{Type I error.}
-
 \item{time}{Observation time.}
 
 \item{status}{Event status. The event coded as 1 is assumed to be the event
 of interest.}
 
 \item{tau}{Truncation time.}
+
+\item{alpha}{Type I error.}
 }
 \value{
 Data.frame containing:

@@ -5,8 +5,6 @@
 #' @param event_rate Event rate.
 #' @param strata Stratum label.
 #' @param tau Truncation time.
-#' @importFrom stats rexp
-
 GenDataStrat <- function(
   n,
   censor_rate,
@@ -17,13 +15,13 @@ GenDataStrat <- function(
   
   # Censor time.
   if (censor_rate > 0) {
-    censor <- rexp(n = n, rate = censor_rate)
+    censor <- stats::rexp(n = n, rate = censor_rate)
   } else {
     censor <- rep(tau, n)
   }
   
   # Event time.
-  event <- rexp(n = n, rate = event_rate)
+  event <- stats::rexp(n = n, rate = event_rate)
   
   # Observation time
   time <- pmin(censor, event)
@@ -43,7 +41,7 @@ GenDataStrat <- function(
 #' @param event_rates Per-strata event rates. Determines the
 #'   number of strata.
 #' @param tau Truncation time.
-#' @importFrom dplyr "%>%" group_by summarise
+#' @importFrom dplyr "%>%"
 #' @export 
 
 GenData <- function(
@@ -68,15 +66,14 @@ GenData <- function(
   strata <- NULL
   data <- df %>%
     dplyr::group_by(strata) %>%
-    dplyr::summarise(
+    dplyr::reframe(
       GenDataStrat(
         n = n, 
         censor_rate = censor_rate, 
         event_rate = event_rate,
         strata = strata,
         tau = tau
-      ),
-      .groups = "drop"
+      )
     )
   
   # Output.

@@ -1,6 +1,6 @@
 Package: StratSurv
 Title: Stratified Survival Analysis
-Version: 0.0.3
+Version: 0.0.4
 Authors@R: 
     person(given = "Zachary",
            family = "McCaw",
@@ -15,7 +15,6 @@ Imports:
   dplyr,
   methods,
   stats,
-  survival,
   survRM2,
   tidyr
 RoxygenNote: 7.1.2

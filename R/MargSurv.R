@@ -6,36 +6,32 @@
 #' 
 #' Calculate the survival rate at a given time point tau.
 #' 
-#' @param alpha Type I error.
 #' @param time Observation time.
 #' @param status Event status. The event coded as 1 is assumed to be the event
 #'   of interest.
 #' @param tau Truncation time.
-#' @importFrom stats approxfun
+#' @param alpha Type I error.
 #' @return Data.frame containing:
 #' \itemize{
 #'   \item Truncation time 'tau'.
 #'   \item Survival 'rate'
 #'   \item Standard error 'se'.
 #' }
-
-SurvRate <- function(alpha = 0.05, time, status, tau) {
+SurvRate <- function(time, status, tau, alpha = 0.05) {
   z <- stats::qnorm(p = 1 - alpha / 2)
-  km <- survival::survfit(survival::Surv(time, status) ~ 1)
-  tab <- summary(km)
-  s <- stats::approxfun(x = tab$time, y = tab$surv, rule = 2)
-  rate <- s(tau)
-  ses <- stats::approxfun(x = tab$time, y = tab$std.err, rule = 2)
-  se <- ses(tau)
+  tab <- TabulateKM(status = status, time = time)
+  km <- stats::stepfun(x = tab$time, y = c(1, tab$surv))
+  se2 <- stats::stepfun(x = tab$time, y = c(0, tab$surv_var))
   out <- data.frame(
     tau = tau,
-    rate = rate,
-    se = se
+    rate = km(tau),
+    se = sqrt(se2(tau))
   )
   out$lower <- out$rate - z * out$se
   out$upper <- out$rate + z * out$se
   return(out)
 }
+
 
 # -----------------------------------------------------------------------------
 # Risk difference, ratio, odds ratio.
@@ -45,14 +41,13 @@ SurvRate <- function(alpha = 0.05, time, status, tau) {
 #' 
 #' @param alpha Type I error level.
 #' @param rates Data.frame containing (strata, arm, rate, se).
-#' @importFrom dplyr "%>%" group_by mutate summarise
-#' @importFrom stats pnorm qnorm
+#' @importFrom dplyr "%>%"
 #' @export
 #' @return Per-stratum rate differences and standard error.
 
 RateDiff <- function(alpha = 0.05, rates) {
   no_strata <- !("strata" %in% colnames(rates))
-  z <- qnorm(p = 1 - alpha / 2)
+  z <- stats::qnorm(p = 1 - alpha / 2)
   arm <- NULL
   est <- NULL
   rate <- NULL
@@ -71,7 +66,7 @@ RateDiff <- function(alpha = 0.05, rates) {
     dplyr::mutate(
       lower = est - z * se,
       upper = est + z * se,
-      p = 2 * pnorm(q = abs(est) / se, lower.tail = FALSE)
+      p = 2 * stats::pnorm(q = abs(est) / se, lower.tail = FALSE)
     )
   return(rd)
 }
@@ -81,13 +76,12 @@ RateDiff <- function(alpha = 0.05, rates) {
 #' 
 #' @param alpha Type I error level.
 #' @param rates Data.frame containing (strata, arm, rate, se).
-#' @importFrom dplyr "%>%" group_by mutate select summarise
-#' @importFrom stats pnorm qnorm
+#' @importFrom dplyr "%>%"
 #' @export
 #' @return Per-stratum rate ratio 'rr' and log standard error 'log_se'.
 
 RateRatio <- function(alpha = 0.05, rates) {
-  z <- qnorm(p = 1 - alpha / 2)
+  z <- stats::qnorm(p = 1 - alpha / 2)
   no_strata <- !("strata" %in% colnames(rates))
   arm <- NULL
   est <- NULL
@@ -108,7 +102,7 @@ RateRatio <- function(alpha = 0.05, rates) {
       lower = est * exp(-z * log_se),
       upper = est * exp(+z * log_se),
       se = est * log_se,
-      p = 2 * pnorm(q = abs(log(est)) / log_se, lower.tail = FALSE)
+      p = 2 * stats::pnorm(q = abs(log(est)) / log_se, lower.tail = FALSE)
     ) %>% 
     dplyr::select(
       - log_se
@@ -121,13 +115,12 @@ RateRatio <- function(alpha = 0.05, rates) {
 #' 
 #' @param alpha Type I error.
 #' @param rates Data.frame containing (strata, arm, rate, se).
-#' @importFrom dplyr "%>%" group_by mutate select summarise
-#' @importFrom stats pnorm qnorm
+#' @importFrom dplyr "%>%"
 #' @export
 #' @return Per-stratum rate odds ratio 'or' and log standard error 'log_se'.
 
 OddsRatio <- function(alpha = 0.05, rates) {
-  z <- qnorm(p = 1 - alpha / 2)
+  z <- stats::qnorm(p = 1 - alpha / 2)
   no_strata <- !("strata" %in% colnames(rates))
   arm <- NULL
   est <- NULL
@@ -151,7 +144,7 @@ OddsRatio <- function(alpha = 0.05, rates) {
       lower = est * exp(-z * log_se),
       upper = est * exp(+z * log_se),
       se = est * log_se,
-      p = 2 * pnorm(q = abs(log(est)) / log_se, lower.tail = FALSE)
+      p = 2 * stats::pnorm(q = abs(log(est)) / log_se, lower.tail = FALSE)
     ) %>% 
     dplyr::select(
       - log_se
@@ -178,8 +171,7 @@ OddsRatio <- function(alpha = 0.05, rates) {
 #' @param tau Truncation time.
 #' @param alpha Type I error.
 #' @param weights Per-stratum weights, for sorted strata.
-#' @importFrom methods new
-#' @importFrom dplyr "%>%" group_by inner_join mutate n select summarise
+#' @importFrom dplyr "%>%"
 #' @export
 #' @examples 
 #' # Arm 1.
@@ -233,9 +225,8 @@ StratRate <- function(
   # Per-stratum event rates.
   strat_rates <- data %>%
     dplyr::group_by(strata, arm) %>%
-    dplyr::summarise(
-      SurvRate(alpha = alpha, time = time, status = status, tau = tau),
-      .groups = "drop"
+    dplyr::reframe(
+      SurvRate(alpha = alpha, time = time, status = status, tau = tau)
     ) %>% 
     dplyr::inner_join(
       weights,
@@ -246,7 +237,7 @@ StratRate <- function(
   rate <- NULL
   se <- NULL
   weight <- NULL
-  z <- qnorm(p = 1 - alpha / 2)
+  z <- stats::qnorm(p = 1 - alpha / 2)
   marg_rates <- strat_rates %>%
     dplyr::group_by(arm) %>%
     dplyr::summarise(
@@ -276,7 +267,7 @@ StratRate <- function(
   counts <- PrepCounts(data = data, weights = weights)
   
   # Output.
-  out <- new(
+  out <- methods::new(
     Class = "stratSurv",
     Stratified = strat_rates,
     Marginal = marg_rates,

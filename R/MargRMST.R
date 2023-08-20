@@ -9,7 +9,6 @@
 #'   of interest.
 #' @param arm Arm, assumed to have two levels, coded 0/1.
 #' @param tau Truncation time.
-#' @importFrom survRM2 rmst2
 #' @return Data.frame containing:
 #' \itemize{
 #'   \item 'Stratum' and 'Arm'.
@@ -18,7 +17,6 @@
 #'   \item Standard error 'SE'.
 #'   \item Lower 'L' and upper 'U'.
 #' }
-
 StratumRMST <- function(
   time,
   status,
@@ -56,20 +54,18 @@ StratumRMST <- function(
 #' @param se Standard error.
 #' @param weight Statistic weight.
 #' @param alpha Type I error.
-#' @importFrom stats qnorm
 #' @return Data.frame containing:
 #' \itemize{
 #'   \item Marginalized estimate 'Est' and standard error 'SE'.
 #'   \item Lower 'L' and upper 'U' confidence bounds.
 #' }
-
 MargStats <- function(
   est,
   se,
   weight,
   alpha
 ) {
-  crit <- qnorm(p = 1 - alpha / 2)
+  crit <- stats::qnorm(p = 1 - alpha / 2)
   out <- data.frame(
     "est" = sum(weight * est),
     "se" = sqrt(sum(weight^2 * se^2))
@@ -91,14 +87,12 @@ MargStats <- function(
 #' @param se1 Standard error for arm 1.
 #' @param se0 Standard error for arm 0.
 #' @param alpha Type I error.
-#' @importFrom stats pnorm qnorm
 #' @return Data.frame containing:
 #' \itemize{
 #'   \item 'Contrast' and estimate 'Est'.
 #'   \item Lower 'L' and upper 'U' confidence bounds.
 #'   \item 'P' value.
 #' }
-
 Contrasts <- function(
   est1,
   est0,
@@ -106,21 +100,21 @@ Contrasts <- function(
   se0,
   alpha 
 ) {
-  crit <- qnorm(p = 1 - alpha / 2)
+  crit <- stats::qnorm(p = 1 - alpha / 2)
   
   # Difference.
   delta <- est1 - est0
   se_diff <- sqrt(se1^2 + se0^2)
   delta_lower <- delta - crit * se_diff
   delta_upper <- delta + crit * se_diff
-  delta_p <- 2 * pnorm(q = abs(delta) / se_diff, lower.tail = FALSE)
+  delta_p <- 2 * stats::pnorm(q = abs(delta) / se_diff, lower.tail = FALSE)
   
   # Ratio.
   rho <- est1 / est0 
   se_rho_log <- sqrt(se1^2 / est1^2 + se0^2 / est0^2)
   rho_lower <- rho * exp(- crit * se_rho_log)
   rho_upper <- rho * exp(+ crit * se_rho_log)
-  rho_p <- 2 * pnorm(q = abs(log(rho)) / se_rho_log, lower.tail = FALSE)
+  rho_p <- 2 * stats::pnorm(q = abs(log(rho)) / se_rho_log, lower.tail = FALSE)
   
   # Output.
   out <- data.frame(
@@ -152,9 +146,7 @@ Contrasts <- function(
 #' @param tau Truncation time.
 #' @param alpha Type I error.
 #' @param weights Per-stratum weights, for sorted strata.
-#' @importFrom methods new
-#' @importFrom dplyr "%>%" group_by inner_join n select summarise
-#' @importFrom tidyr pivot_wider
+#' @importFrom dplyr "%>%"
 #' @export
 #' @examples 
 #' # Arm 1.
@@ -183,7 +175,6 @@ Contrasts <- function(
 #'   strata = data$strata,
 #'   tau = 2
 #' )
-
 StratRMST <- function(
   time,
   status,
@@ -208,28 +199,26 @@ StratRMST <- function(
   # Per-stratum RMSTs.
   rmst <- data %>%
     dplyr::group_by(strata) %>%
-    dplyr::summarise(
+    dplyr::reframe(
       StratumRMST(
         time = time,
         status = status,
         arm = arm,
         tau = tau
-      ),
-      .groups = "drop"
+      )
     ) %>%
     dplyr::inner_join(weights, by = "strata")
 
   # Marginalize.
   marg <- rmst %>%
     dplyr::group_by(arm, stat) %>%
-    dplyr::summarise(
+    dplyr::reframe(
       MargStats(
         est = est,
         se = se,
         weight = weight,
         alpha = alpha
-      ),
-      .groups = "drop"
+      )
     )
   
   # Contrasts.
@@ -247,16 +236,15 @@ StratRMST <- function(
       names_sep = ""
       ) %>%
     dplyr::group_by(stat) %>%
-    dplyr::summarise(
-      Contrasts(est1 = est1, est0 = est0, se1 = se1, se0 = se0, alpha = alpha),
-      .groups = "drop"
+    dplyr::reframe(
+      Contrasts(est1 = est1, est0 = est0, se1 = se1, se0 = se0, alpha = alpha)
     )
   
   # Weights data.frame.
   counts <- PrepCounts(data = data, weights = weights)
   
   # Output.
-  out <- new(
+  out <- methods::new(
     Class = "stratSurv",
     Stratified = rmst,
     Marginal = marg,

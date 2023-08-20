@@ -15,7 +15,7 @@ TabulateKM <- function(
 ) {
   
   # Events table.
-  data <- data.frame(status = status, time = time)
+  data <- data.frame("status" = status, "time" = time)
   out <- data %>%
     dplyr::arrange(time) %>%
     dplyr::group_by(time) %>%
@@ -79,6 +79,8 @@ MargKM <- function(status, strata, time) {
       surv = km_fn(unique_times),
       se2 = se2_fn(unique_times)
     )
+    
+    stratum <- NULL
     out$stratum <- s
     out <- out %>% dplyr::relocate(stratum)
     return(out)
