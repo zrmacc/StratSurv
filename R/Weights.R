@@ -33,7 +33,6 @@ PrepCounts <- function(data, weights) {
 #' @return Data.frame containing 'strata' and 'weight'.
 
 PrepWeights <- function(data, weight) {
-  arm <- NULL
   strata <- NULL
   if (is.null(weight)) {
     weights <- data %>%

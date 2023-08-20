@@ -12,7 +12,6 @@
 #'   of interest.
 #' @param tau Truncation time.
 #' @importFrom stats approxfun
-#' @importFrom survival survfit Surv
 #' @return Data.frame containing:
 #' \itemize{
 #'   \item Truncation time 'tau'.
@@ -21,12 +20,12 @@
 #' }
 
 SurvRate <- function(alpha = 0.05, time, status, tau) {
-  z <- qnorm(p = 1 - alpha / 2)
-  km <- survival::survfit(Surv(time, status) ~ 1)
+  z <- stats::qnorm(p = 1 - alpha / 2)
+  km <- survival::survfit(survival::Surv(time, status) ~ 1)
   tab <- summary(km)
-  s <- approxfun(x = tab$time, y = tab$surv, rule = 2)
+  s <- stats::approxfun(x = tab$time, y = tab$surv, rule = 2)
   rate <- s(tau)
-  ses <- approxfun(x = tab$time, y = tab$std.err, rule = 2)
+  ses <- stats::approxfun(x = tab$time, y = tab$std.err, rule = 2)
   se <- ses(tau)
   out <- data.frame(
     tau = tau,

@@ -7,12 +7,10 @@ Authors@R:
            role = c("aut", "cre"),
            email = "zmccaw@alumni.harvard.edu",
            comment = c(ORCID = "0000-0002-2006-9828"))
-Description: Provides functions for inference on the stratified difference and ratio of restricted mean survival
-	times and survival rates comparing two treatment arms.
+Description: Provides functions for inference on the stratified difference and ratio of restricted mean survival times and survival rates comparing two treatment arms.
 Depends: R (>= 3.5.0)
 License: GPL-3
 Encoding: UTF-8
-LazyData: true
 Imports:
   dplyr,
   methods,
@@ -20,4 +18,7 @@ Imports:
   survival,
   survRM2,
   tidyr
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
