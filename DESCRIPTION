@@ -1,6 +1,6 @@
 Package: StratSurv
 Title: Stratified Survival Analysis
-Version: 0.0.4
+Version: 0.0.5
 Authors@R: 
     person(given = "Zachary",
            family = "McCaw",
@@ -13,6 +13,7 @@ License: GPL-3
 Encoding: UTF-8
 Imports:
   dplyr,
+  ggplot2,
   methods,
   stats,
   survRM2,

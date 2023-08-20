@@ -105,3 +105,4 @@ MargKM <- function(status, strata, time) {
   return(km_marg)
 }
 
+
