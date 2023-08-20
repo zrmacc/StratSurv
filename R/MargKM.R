@@ -70,7 +70,7 @@ MargKM <- function(status, strata, time) {
     # Construct KM curves.
     tab <- TabulateKM(status = status_s, time = time_s)
     km_fn <- stats::stepfun(x = tab$time, y = c(1, tab$surv))
-    nar_fn <- stats::stepfun(x = tab$time, y = c(n_s, tab$nar))
+    nar_fn <- stats::stepfun(x = tab$time, y = c(tab$nar, 0), right = TRUE)
     se2_fn <- stats::stepfun(x = tab$time, y = c(0, tab$surv_var))
     out <- data.frame(
       weight = w_s,
