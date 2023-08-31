@@ -27,7 +27,7 @@ PrepCounts <- function(data, weights) {
 
 #' Calculate Stratum Weights
 #' 
-#' @param data Containing (time, status, arm, strata).
+#' @param data Containing (arm, strata).
 #' @param weight Input weights.
 #' @importFrom dplyr "%>%"
 #' @return Data.frame containing 'strata' and 'weight'.

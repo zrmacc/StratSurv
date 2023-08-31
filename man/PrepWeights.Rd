@@ -7,7 +7,7 @@
 PrepWeights(data, weight)
 }
 \arguments{
-\item{data}{Containing (time, status, arm, strata).}
+\item{data}{Containing (arm, strata).}
 
 \item{weight}{Input weights.}
 }
